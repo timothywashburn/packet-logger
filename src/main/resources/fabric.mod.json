@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "packet-logger",
+  "version": "${version}",
+  "name": "packet-logger",
+  "description": "",
+  "authors": [
+    "Kyro"
+  ],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/packet-logger/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "dev.kyro.packetLogger.client.PacketLoggerClient"
+    ],
+    "main": [
+      "dev.kyro.packetLogger.PacketLogger"
+    ]
+  },
+  "mixins": [
+    "packet-logger.mixins.json",
+    {
+      "config": "packet-logger.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
