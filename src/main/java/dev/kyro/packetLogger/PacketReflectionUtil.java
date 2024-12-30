@@ -8,9 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PacketReflectionUtil {
 	private static final Set<String> IGNORED_FIELDS = Set.of("CODEC");
-	private static final int MAX_DEPTH = 5;
+	private static final int MAX_DEPTH = 1;
 	private static final Set<Object> VISITED_OBJECTS = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private static final String TAB = "\t";
+
+	private static final Set<String> SUPPRESSED_FIELDS = new HashSet<>(Arrays.asList(
+			// "itemSets",
+			// "stonecutterRecipes",
+			// "field_26682"
+	));
 
 	public static String getPacketContents(Object packet) {
 		VISITED_OBJECTS.clear();
@@ -21,29 +27,26 @@ public class PacketReflectionUtil {
 		if (obj == null) return "null";
 		if (depth > MAX_DEPTH) return obj.toString() + " [max depth reached]";
 		if (VISITED_OBJECTS.contains(obj)) return obj.toString() + " [circular reference]";
+
 		if (obj.getClass().isPrimitive() || obj instanceof String || obj instanceof Number ||
 				obj instanceof Boolean || obj instanceof Enum) {
 			return obj.toString();
 		}
 
-		if (obj instanceof Collection<?>) {
-			return inspectCollection((Collection<?>) obj, depth, indent);
-		}
-		if (obj instanceof Map<?, ?>) {
-			return inspectMap((Map<?, ?>) obj, depth, indent);
-		}
-
 		VISITED_OBJECTS.add(obj);
 		try {
 			if (obj.getClass().isArray()) {
-				return arrayToString(obj, depth, indent);
+				return arrayToString(obj, depth);
+			}
+
+			if (obj instanceof Collection<?> || obj instanceof Map<?, ?>) {
+				return collectionToString(obj, depth);
 			}
 
 			StringBuilder result = new StringBuilder();
-			result.append(obj.getClass().getName()).append(" {\n");
-			List<Field> fields = getAllFields(obj.getClass());
+			result.append(obj.getClass().getSimpleName()).append(" {\n");
 
-			for (Field field : fields) {
+			for (Field field : getAllFields(obj.getClass())) {
 				if (Modifier.isStatic(field.getModifiers()) || IGNORED_FIELDS.contains(field.getName())) {
 					continue;
 				}
@@ -51,19 +54,15 @@ public class PacketReflectionUtil {
 				try {
 					field.setAccessible(true);
 					String fieldName = field.getName();
-					Object value = field.get(obj);
 
-					result.append(indent).append(TAB).append(fieldName).append(" = ");
-
-					if (value == null) {
-						result.append("null");
-					} else if (value.getClass().isArray()) {
-						result.append(arrayToString(value, depth + 1, indent + TAB));
-					} else {
-						result.append(inspectObject(value, depth + 1, indent + TAB));
+					if (SUPPRESSED_FIELDS.contains(fieldName)) {
+						result.append(indent).append(TAB).append(fieldName).append(" = [suppressed]\n");
+						continue;
 					}
 
-					result.append("\n");
+					Object value = field.get(obj);
+					result.append(indent).append(TAB).append(fieldName).append(" = ")
+							.append(inspectObject(value, depth + 1, indent + TAB)).append("\n");
 				} catch (Exception e) {
 					continue;
 				}
@@ -79,38 +78,19 @@ public class PacketReflectionUtil {
 		}
 	}
 
-	private static String inspectCollection(Collection<?> collection, int depth, String indent) {
-		if (depth > MAX_DEPTH) return collection.size() + " elements [max depth reached]";
-
-		StringBuilder result = new StringBuilder("[");
-		boolean first = true;
-
-		for (Object element : collection) {
-			if (!first) {
-				result.append(",\n").append(indent).append(TAB);
-			}
-			first = false;
-			result.append(inspectObject(element, depth + 1, indent + TAB));
-		}
-
-		if (!collection.isEmpty()) result.append("\n").append(indent);
-		result.append("]");
-		return result.toString();
+	private static String arrayToString(Object array, int depth) {
+		int length = Array.getLength(array);
+		if (length == 0) return "[]";
+		return "[array length=" + length + "]";
 	}
 
-	private static String inspectMap(Map<?, ?> map, int depth, String indent) {
-		if (depth > MAX_DEPTH) return map.size() + " entries [max depth reached]";
-
-		StringBuilder result = new StringBuilder("{\n");
-		for (Map.Entry<?, ?> entry : map.entrySet()) {
-			result.append(indent).append(TAB)
-					.append(inspectObject(entry.getKey(), depth + 1, indent + TAB))
-					.append(" = ")
-					.append(inspectObject(entry.getValue(), depth + 1, indent + TAB))
-					.append("\n");
+	private static String collectionToString(Object collection, int depth) {
+		if (collection instanceof Collection) {
+			return "[collection size=" + ((Collection<?>) collection).size() + "]";
+		} else if (collection instanceof Map) {
+			return "[map size=" + ((Map<?, ?>) collection).size() + "]";
 		}
-		result.append(indent).append("}");
-		return result.toString();
+		return collection.toString();
 	}
 
 	private static List<Field> getAllFields(Class<?> clazz) {
@@ -120,22 +100,5 @@ public class PacketReflectionUtil {
 			clazz = clazz.getSuperclass();
 		}
 		return fields;
-	}
-
-	private static String arrayToString(Object array, int depth, String indent) {
-		if (depth > MAX_DEPTH) return Array.getLength(array) + " elements [max depth reached]";
-
-		StringBuilder result = new StringBuilder("[");
-		int length = Array.getLength(array);
-
-		for (int i = 0; i < length; i++) {
-			if (i > 0) result.append(",\n").append(indent).append(TAB);
-			Object element = Array.get(array, i);
-			result.append(inspectObject(element, depth + 1, indent + TAB));
-		}
-
-		if (length > 0) result.append("\n").append(indent);
-		result.append("]");
-		return result.toString();
 	}
 }

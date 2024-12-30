@@ -54,11 +54,7 @@ public class PacketLogger implements ModInitializer {
 		if (PACKET_BLACKLIST.contains(packet.getPacketId().toString())) return;
 		LOGGER.info("------------------------------");
 		LOGGER.info("(" + getSideName(networkSide) + ") sent " + packet.getPacketId());
-		if(getSideName(networkSide).equals("client")) {
-			LOGGER.info(PacketReflectionUtil.getPacketContents(packet));
-		} else {
-			LOGGER.info(packet.toString());
-		}
+		LOGGER.info(PacketReflectionUtil.getPacketContents(packet));
 	}
 
 	public static void logPacketReceive(Packet<?> packet, NetworkSide networkSide) {
@@ -67,8 +63,6 @@ public class PacketLogger implements ModInitializer {
 		LOGGER.info("(" + getSideName(networkSide) + ") received " + packet.getPacketId());
 		if(getSideName(networkSide).equals("client")) {
 			LOGGER.info(PacketReflectionUtil.getPacketContents(packet));
-		} else {
-			LOGGER.info(packet.toString());
 		}
 	}
 }
