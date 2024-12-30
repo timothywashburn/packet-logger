@@ -50,13 +50,13 @@ public class PacketLogger implements ModInitializer {
 		if (PACKET_BLACKLIST.contains(packet.getPacketId().toString())) return;
 		LOGGER.info("------------------------------");
 		LOGGER.info("(" + getSideName(networkSide) + ") sent " + packet.getPacketId());
-		LOGGER.info(packet.toString());
+		LOGGER.info(PacketReflectionUtil.getPacketContents(packet));
 	}
 
 	public static void logPacketReceive(Packet<?> packet, NetworkSide networkSide) {
 		if (PACKET_BLACKLIST.contains(packet.getPacketId().toString())) return;
 		LOGGER.info("------------------------------");
 		LOGGER.info("(" + getSideName(networkSide) + ") received " + packet.getPacketId());
-		LOGGER.info(packet.toString());
+		LOGGER.info(PacketReflectionUtil.getPacketContents(packet));
 	}
 }
