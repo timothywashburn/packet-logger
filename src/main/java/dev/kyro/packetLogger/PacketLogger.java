@@ -27,6 +27,10 @@ public class PacketLogger implements ModInitializer {
 			"clientbound/minecraft:update_attributes",
 			"clientbound/minecraft:set_entity_data",
 			"clientbound/minecraft:keep_alive",
+			"clientbound/minecraft:update_tags",
+			"clientbound/minecraft:login",
+			"clientbound/minecraft:commands",
+			"clientbound/minecraft:container_set_content",
 
 			"serverbound/minecraft:client_tick_end",
 			"serverbound/minecraft:player_input",
